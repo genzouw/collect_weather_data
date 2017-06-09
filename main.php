@@ -27,30 +27,32 @@ $header = array(
     '視程',
 );
 
-echo implode($header, ","), PHP_EOL;
+echo implode($header, ','), PHP_EOL;
+
+$fromDate = isset($argv[1]) ? new Carbon($argv[1]) : new Carbon('1980-01-01');
+$toDate = isset($argv[2]) ? new Carbon($argv[2]) : Carbon::yesterday();
+
+// TODO これはなんだろう？
+$precNo = 62;
+$blockNo = 47772;
 
 for (
-    $targetDate = new Carbon('1980-01-01');
-    // $targetDate = new Carbon('1991-07-01');
-    $targetDate->year < 2018;
+    $targetDate = $fromDate;
+    $targetDate->lte($toDate);
     $targetDate->addDay()
 ) {
-
     $year = $targetDate->year;
     $month = $targetDate->month;
     $day = $targetDate->day;
 
-    // これはなんだろう？
-    $precNo = 62;
-    $blockNo = 47772;
+    $webPageUrl = 'http://www.data.jma.go.jp/obd/stats/etrn/view/hourly_s1.php?' .
+        "prec_no={$precNo}&block_no={$blockNo}&year={$year}&month={$month}&day={$day}&view=";
 
-    $dom = phpQuery::newDocument(file_get_contents(
-        "http://www.data.jma.go.jp/obd/stats/etrn/view/hourly_s1.php?prec_no={$precNo}&block_no={$blockNo}&year={$year}&month={$month}&day={$day}&view="
-    ));
+    $dom = phpQuery::newDocument(file_get_contents($webPageUrl));
 
     pq($dom)->find(
-        "#tablefix1 tr"
-    )->each(function($it) use ($year, $month, $day, $precNo, $blockNo) {
+        '#tablefix1 tr'
+    )->each(function ($it) use ($year, $month, $day, $precNo, $blockNo) {
         $td = pq($it)->find('td');
 
         $hour = $td->eq(0)->text();
@@ -80,6 +82,5 @@ for (
             $td->eq(15)->text(),
             $td->eq(16)->text(),
         ), ',') . PHP_EOL;
-
     });
 }
